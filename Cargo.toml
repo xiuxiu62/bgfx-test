@@ -1,0 +1,11 @@
+[package]
+name = "glfw-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bgfx-rs = "0.6.0"
+glam = "0.20.2"
+glfw = "0.43.0"
+raw-window-handle = "0.4.2"
+thiserror = "1.0.30"
