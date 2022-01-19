@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::InitializationError;
 use bgfx_rs::static_lib::{Init, PlatformData, RendererType, ResetFlags};
 use glfw::{Action, Context, Glfw, Key, Window, WindowEvent, WindowMode};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
@@ -40,10 +40,10 @@ impl WindowHandle {
         }
     }
 
-    pub fn try_new(metadata: WindowMetadata<'_>) -> Result<Self> {
+    pub fn try_new(metadata: WindowMetadata<'_>) -> Result<Self, InitializationError> {
         let glfw = match glfw::init(glfw::FAIL_ON_ERRORS) {
             Ok(glfw) => glfw,
-            Err(_) => return Err(Error::GlfwInitialization),
+            Err(_) => return Err(InitializationError::Glfw),
         };
 
         match glfw.create_window(
@@ -53,11 +53,11 @@ impl WindowHandle {
             metadata.mode,
         ) {
             Some((window, event_stream)) => Ok(Self::new(glfw, window, event_stream)),
-            None => return Err(Error::WindowInitialization),
+            None => Err(InitializationError::Window),
         }
     }
 
-    pub fn init(&mut self) -> Result<()> {
+    pub fn init(&mut self) -> Result<(), InitializationError> {
         let mut init = Init::new();
         init.type_r = self.get_render_type();
         init.resolution.height = 0;
@@ -66,7 +66,7 @@ impl WindowHandle {
         init.platform_data = self.get_platform_data();
 
         if !bgfx_rs::static_lib::init(&init) {
-            return Err(Error::BgfxInitialization);
+            return Err(InitializationError::Bgfx);
         };
 
         // Make the window's context current
@@ -80,24 +80,26 @@ impl WindowHandle {
     pub fn run(&mut self) {
         while !self.window.should_close() {
             // Swap front and back buffers
-            self.window.swap_buffers();
+            // self.window.swap_buffers();
 
             // Poll for and process events
             self.glfw.poll_events();
-            for (_, event) in glfw::flush_messages(&self.event_stream) {
-                println!("{:?}", event);
-                match event {
-                    glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                        self.window.set_should_close(true)
-                    }
-                    _ => {}
-                }
-            }
+            self.handle_events();
         }
     }
 
     pub fn shutdown(&self) {
         bgfx_rs::static_lib::shutdown();
+    }
+
+    fn handle_events(&mut self) {
+        self.glfw.poll_events();
+        glfw::flush_messages(&self.event_stream).for_each(|(_, event)| {
+            println!("{:?}", event);
+            if let glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) = event {
+                self.window.set_should_close(true);
+            }
+        });
     }
 
     fn get_render_type(&self) -> RendererType {

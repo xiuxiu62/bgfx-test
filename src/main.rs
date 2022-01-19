@@ -1,6 +1,5 @@
-use bgfx_rs::static_lib::ResetArgs;
 use error::Result;
-use glfw::{Action, Context, Key, WindowMode};
+use glfw::WindowMode;
 use window::{WindowHandle, WindowMetadata};
 
 mod error;
