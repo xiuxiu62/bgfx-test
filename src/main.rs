@@ -16,8 +16,5 @@ fn main() -> Result<()> {
     let mut window = WindowHandle::try_new(metadata)?;
 
     window.init()?;
-    window.run();
-    window.shutdown();
-
-    Ok(())
+    window.run()
 }

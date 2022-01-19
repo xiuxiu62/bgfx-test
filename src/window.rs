@@ -110,7 +110,7 @@ impl WindowHandle {
     }
 
     /// Base event loop
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> crate::error::Result<()> {
         self.window.make_current();
         self.window.set_key_polling(true);
 
@@ -145,10 +145,9 @@ impl WindowHandle {
 
             bgfx_rs::static_lib::frame(false);
         }
-    }
 
-    pub fn shutdown(&self) {
         bgfx_rs::static_lib::shutdown();
+        Ok(())
     }
 
     fn handle_events(&mut self) {
